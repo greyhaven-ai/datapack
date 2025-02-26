@@ -1,0 +1,25 @@
+---
+title: Document with Custom Fields
+version: 1.0.0
+type: document
+description: This document demonstrates custom metadata fields
+created_at: '2025-02-24'
+x_priority: high
+x_workflow_status: in_review
+x_review_date: '2025-03-26'
+x_reviewers:
+- Alice
+- Bob
+- Charlie
+---
+
+# Document with Custom Fields
+
+This document demonstrates the use of custom metadata fields in MDP files.
+
+## Custom Fields Used
+
+- **x_priority**: Indicates the priority level of the document
+- **x_workflow_status**: Indicates the current status in the workflow
+- **x_review_date**: When the document should be reviewed
+- **x_reviewers**: List of people who should review the document

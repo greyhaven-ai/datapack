@@ -1,0 +1,308 @@
+---
+description: Documentation for Datapack, a platform for document ingestion, parsing, annotation, and secure sharing across software ecosystems
+globs: "**/*.{js,ts,jsx,tsx,py,md}"
+alwaysApply: false
+---
+# Datapack Platform Documentation
+
+@context {
+    "type": "documentation",
+    "purpose": "platform_overview",
+    "format_version": "1.0.0",
+    "supported_content_types": [
+        "platform_description",
+        "core_features",
+        "implementation_guidelines",
+        "integration_patterns"
+    ]
+}
+
+## Overview
+
+Datapack is a platform that allows users to ingest and parse a variety of document types, add context through annotations, metadata, or summaries, and securely share them across different software ecosystems. By leveraging MCP (Model Context Protocol), Datapack integrates with powerful LLMs to dynamically handle documents in a broader context-aware environment.
+
+@platform_capabilities {
+    "document_types": [
+        "PDF", 
+        "Word", 
+        "CSV", 
+        "JSON", 
+        "XML", 
+        "Markdown", 
+        "HTML"
+    ],
+    "context_operations": [
+        "annotation",
+        "metadata_tagging",
+        "summarization",
+        "linking"
+    ],
+    "integration_methods": [
+        "direct_platform_integration",
+        "mcp_protocol",
+        "plugin_architecture"
+    ]
+}
+
+## Core Features
+
+### 1. Multi-Format Parsing
+
+@feature {
+    "id": "multi_format_parsing",
+    "description": "Support for parsing and extracting content from various document formats",
+    "capabilities": [
+        "text_extraction",
+        "structure_preservation",
+        "metadata_extraction"
+    ]
+}
+
+Datapack provides robust parsing capabilities for common document formats including:
+- PDF documents with text, image, and structure extraction
+- Microsoft Word documents with formatting preservation
+- Structured data formats (CSV, JSON, XML)
+- Web content formats (Markdown, HTML)
+
+The parsing engine extracts not only the content but also important metadata such as:
+- Author information
+- Creation and modification dates
+- Document structure and hierarchy
+- Embedded resources and references
+
+### 2. Context Addition
+
+@feature {
+    "id": "context_addition",
+    "description": "Tools for adding context to documents through manual and AI-assisted methods",
+    "capabilities": [
+        "manual_annotation",
+        "ai_summarization",
+        "metadata_tagging",
+        "reference_linking"
+    ]
+}
+
+Users can enrich documents with additional context through:
+
+**Manual Annotation**
+- Text highlighting with attached notes
+- Section-specific comments
+- External reference linking
+
+**AI-Generated Summaries**
+- LLM-based document summarization
+- Key point extraction
+- Topic identification
+
+**Metadata Tagging**
+- Automatic tag suggestion
+- Custom tagging schemas
+- Hierarchical categorization
+
+### 3. Collaboration & Sharing
+
+@feature {
+    "id": "collaboration_sharing",
+    "description": "Features enabling secure document sharing and collaborative workflows",
+    "capabilities": [
+        "platform_integrations",
+        "pack_creation",
+        "versioning",
+        "access_control"
+    ]
+}
+
+Datapack facilitates seamless collaboration through:
+
+**Platform Integrations**
+- Direct integration with Slack for in-chat document sharing
+- Google Docs integration for collaborative editing
+- Cursor integration for in-editor document access
+
+**Shared Packs**
+- Creation of document collections around specific topics
+- Cross-system referencing of document packs
+- Team-based pack management
+
+**Versioning**
+- Complete revision history for documents
+- Change tracking and comparison
+- Version-specific sharing and access
+
+### 4. MCP (Model Context Protocol) Integration
+
+@feature {
+    "id": "mcp_integration",
+    "description": "Integration with Model Context Protocol for AI-enhanced document processing",
+    "capabilities": [
+        "context_fetching",
+        "ai_actions",
+        "multi_step_workflows"
+    ]
+}
+
+Datapack leverages MCP to:
+
+**Securely Connect with LLMs**
+- On-demand context fetching from large documents
+- Partial document retrieval based on relevance
+- Secure handling of sensitive information
+
+**Provide AI-Driven Actions**
+- Automatic document summarization
+- Content classification
+- Insight generation
+
+**Enable Multi-Step AI Workflows**
+- Document parsing followed by related data retrieval
+- Cross-platform information synthesis
+- Automated reporting and documentation
+
+**Context Collboration**
+- Standardized format to share context with models at collaborators
+- metadata to easily give models information about related documents
+
+
+### 5. Extensibility & Ecosystem
+
+@feature {
+    "id": "extensibility_ecosystem",
+    "description": "Architecture supporting platform extension and ecosystem integration",
+    "capabilities": [
+        "plugin_architecture",
+        "identity_integration",
+        "security_features"
+    ]
+}
+
+Datapack is built for extensibility through:
+
+**Plugin Architecture**
+- Developer SDK for custom connectors
+- Microservice approach for component isolation
+- API-first design for integration flexibility
+
+**Identity and Access Management**
+- Integration with existing IAM solutions
+- Role-based access control
+- Fine-grained permission management
+
+**Security Features**
+- Optional encryption at rest
+- Secure transit protocols
+- Audit logging and compliance reporting
+
+## Implementation Guidelines
+
+@implementation_rules {
+    "integration_patterns": {
+        "mcp_protocol": "Follow MCP specifications for LLM integration",
+        "platform_connectors": "Use standard OAuth flows for platform integration",
+        "plugin_development": "Adhere to plugin API contracts"
+    },
+    "security_requirements": {
+        "data_handling": "Implement proper data sanitization",
+        "authentication": "Support SSO and MFA where applicable",
+        "authorization": "Enforce least privilege access"
+    },
+    "performance_considerations": {
+        "document_size": "Optimize for large document handling",
+        "concurrent_users": "Design for multi-user collaboration",
+        "response_time": "Maintain sub-second response for common operations"
+    }
+}
+
+## Common Integration Patterns
+
+@patterns {
+    "document_ingestion": {
+        "format": "API-based document upload with format detection",
+        "example": "POST /api/documents with multipart form data"
+    },
+    "context_retrieval": {
+        "format": "MCP-compliant context fetching",
+        "example": "GET /api/context/{document_id}?query=relevant_section"
+    },
+    "collaboration_flow": {
+        "format": "Event-based notification system for changes",
+        "example": "WebSocket connection for real-time updates"
+    }
+}
+
+## Examples
+
+### Document Ingestion Example
+
+```javascript
+// Example code for document upload and processing
+async function uploadDocument(file, options) {
+  const formData = new FormData();
+  formData.append('document', file);
+  formData.append('options', JSON.stringify(options));
+  
+  const response = await fetch('https://api.datapack.io/documents', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${API_KEY}`
+    },
+    body: formData
+  });
+  
+  return await response.json();
+}
+```
+
+### MCP Integration Example
+
+```javascript
+// Example of using MCP to retrieve document context
+async function getDocumentContext(documentId, query, llmProvider) {
+  const response = await fetch(`https://api.datapack.io/mcp/context`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`
+    },
+    body: JSON.stringify({
+      documentId,
+      query,
+      llmProvider,
+      maxTokens: 1000
+    })
+  });
+  
+  return await response.json();
+}
+```
+
+## Related Resources
+
+@related {
+    "documentation": [
+        "MCP Protocol Specification",
+        "Datapack API Reference",
+        "Security Best Practices"
+    ],
+    "examples": [
+        "Sample Integrations Repository",
+        "Plugin Development Guide",
+        "Platform Connector Examples"
+    ]
+}
+
+## Validation
+
+@validation {
+    "required": [
+        "API authentication for all requests",
+        "Proper error handling and status codes",
+        "Rate limiting compliance",
+        "Data validation for all inputs"
+    ],
+    "recommended": [
+        "Implement caching for frequent document access",
+        "Use webhooks for asynchronous processing notifications",
+        "Support batch operations for efficiency"
+    ]
+}
