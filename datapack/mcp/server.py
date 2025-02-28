@@ -13,8 +13,8 @@ from typing import AsyncIterator, Dict, List, Optional, Any
 from mcp.server.fastmcp import FastMCP, Context
 import mcp.types as types
 
-from datapack.mdp.document import Document
-from datapack.mdp.collection import DocumentCollection, InMemoryCollection
+from mdp.document import Document
+from mdp.collection import DocumentCollection, InMemoryCollection
 
 
 class DatapackContext:

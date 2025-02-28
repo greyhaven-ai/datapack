@@ -11,9 +11,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Union, Set
 
-from datapack.mdp.document import Document
-from datapack.mdp.collection import Collection
-from datapack.mdp.utils import find_mdp_files
+from mdp.document import Document
+from mdp.collection import Collection
+from mdp.utils import find_mdp_files
 
 
 def create_release_notes(

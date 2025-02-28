@@ -10,8 +10,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Union
 
-from datapack.mdp.document import Document
-from datapack.mdp.utils import find_mdp_files, extract_metadata_from_content
+from mdp.document import Document
+from mdp.utils import find_mdp_files, extract_metadata_from_content
 
 
 def sync_codebase_docs(

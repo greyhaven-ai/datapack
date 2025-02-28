@@ -1,0 +1,18 @@
+# Sample PDF Document
+
+This is a sample PDF document for testing the PDF to MDP converter.
+
+## Section 1: Introduction
+
+The PDF converter extracts text content and metadata from PDF files and converts them to MDP format.
+
+## Section 2: Features
+
+- Extracts text content from PDF files
+- Preserves document structure with headings
+- Extracts metadata like title, author, and creation date
+- Limits extraction to a specified number of pages if needed
+
+## Section 3: Example
+
+This document serves as an example for testing the PDF converter functionality. 

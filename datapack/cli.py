@@ -10,15 +10,23 @@ import os
 import sys
 from pathlib import Path
 from typing import Optional, List
+import re
 
-from datapack.mdp.document import Document
-from datapack.mdp.collection import Collection
-from datapack.mdp.converter import convert_to_html, convert_to_pdf
-from datapack.mdp.utils import find_mdp_files
+from mdp.document import Document
+from mdp.collection import Collection
+from mdp.converter import convert_to_html, convert_to_pdf
+from mdp.utils import find_mdp_files
 from datapack.workflows.dev import sync_codebase_docs, generate_api_docs
 from datapack.workflows.releases import create_release_notes, generate_changelog
 from datapack.workflows.content import batch_process_documents, merge_documents
 
+# Check if AI support is available
+try:
+    from datapack.ai.models import AIModelConfig
+    from datapack.ai.agents import CollectionCreationAgent
+    AI_SUPPORT = True
+except ImportError:
+    AI_SUPPORT = False
 
 def create_parser() -> argparse.ArgumentParser:
     """
@@ -74,6 +82,70 @@ def create_parser() -> argparse.ArgumentParser:
     coll_list.add_argument("collection", help="Collection file path")
     coll_list.add_argument("--format", "-f", choices=["text", "json"], default="text",
                          help="Output format (default: text)")
+    
+    # AI-powered collection commands (if AI support is available)
+    if AI_SUPPORT:
+        # AI-powered thematic organization
+        coll_organize = collection_subparsers.add_parser(
+            "organize-by-theme", 
+            help="Organize documents into thematic collections using AI"
+        )
+        coll_organize.add_argument(
+            "input_dir", 
+            help="Directory containing documents to organize"
+        )
+        coll_organize.add_argument(
+            "output_dir", 
+            help="Directory to save the organized collections"
+        )
+        coll_organize.add_argument(
+            "--max-collections", 
+            type=int, 
+            default=5,
+            help="Maximum number of collections to create (default: 5)"
+        )
+        coll_organize.add_argument(
+            "--min-documents", 
+            type=int, 
+            default=2,
+            help="Minimum documents per collection (default: 2)"
+        )
+        coll_organize.add_argument(
+            "--model", 
+            default="gemini-1.5-flash",
+            help="AI model to use for organization (default: gemini-1.5-flash)"
+        )
+        coll_organize.add_argument(
+            "--no-parent-documents", 
+            action="store_true",
+            help="Skip creation of parent documents"
+        )
+        coll_organize.add_argument(
+            "--recursive", 
+            "-r", 
+            action="store_true",
+            help="Process input directory recursively"
+        )
+        
+        # AI-powered collection analysis
+        coll_analyze = collection_subparsers.add_parser(
+            "analyze", 
+            help="Analyze relationships between collections using AI"
+        )
+        coll_analyze.add_argument(
+            "collections_dir", 
+            help="Directory containing collections to analyze"
+        )
+        coll_analyze.add_argument(
+            "--output", 
+            "-o",
+            help="Path to save the relationship analysis report"
+        )
+        coll_analyze.add_argument(
+            "--model", 
+            default="gemini-1.5-flash",
+            help="AI model to use for analysis (default: gemini-1.5-flash)"
+        )
     
     # Developer workflow commands
     dev_parser = subparsers.add_parser("dev", help="Developer workflows")
@@ -135,6 +207,46 @@ def create_parser() -> argparse.ArgumentParser:
     merge_parser.add_argument("--include-metadata", "-m", action="store_true",
                             help="Include document metadata in output")
     
+    # Document editing commands
+    edit_parser = subparsers.add_parser("edit", help="Edit MDP document content")
+    edit_parser.add_argument("file", help="MDP file to edit")
+    edit_parser.add_argument("--content", "-c", required=True, help="New content to add or replace")
+    edit_parser.add_argument("--output", "-o", help="Output file path (default: overwrite input file)")
+    edit_parser.add_argument("--section", "-s", help="Section identifier to replace (e.g., '## Introduction')")
+    edit_parser.add_argument("--replace-entire", "-r", action="store_true", help="Replace entire document content")
+    edit_parser.add_argument("--append", "-a", action="store_true", help="Append content instead of replacing")
+    edit_parser.add_argument("--track-changes", "-t", action="store_true", 
+                           help="Track changes in metadata context field")
+    edit_parser.add_argument("--change-summary", help="Custom summary of changes (used with --track-changes)")
+    
+    # Document context commands
+    context_parser = subparsers.add_parser("add-context", help="Add context to MDP document")
+    context_parser.add_argument("file", help="MDP file to add context to")
+    context_parser.add_argument("--context", "-c", required=True, help="Context to add")
+    context_parser.add_argument("--output", "-o", help="Output file path (default: overwrite input file)")
+    context_parser.add_argument("--position", "-p", choices=["start", "end"], default="end", help="Where to add context")
+    context_parser.add_argument("--section", "-s", help="Section to add context to (overrides position)")
+    context_parser.add_argument("--as-comment", action="store_true", help="Format context as a Markdown comment")
+    context_parser.add_argument("--track-changes", "-t", action="store_true", 
+                              help="Track changes in metadata context field")
+    context_parser.add_argument("--change-summary", help="Custom summary of changes (used with --track-changes)")
+    
+    # Document query commands
+    query_parser = subparsers.add_parser("query", help="Query MDP document content")
+    query_parser.add_argument("file", help="MDP file to query")
+    query_parser.add_argument("--query", "-q", required=True, help="Query or question about the document")
+    query_parser.add_argument("--section", "-s", help="Section to limit search to")
+    query_parser.add_argument("--max-context", "-m", type=int, default=1000, help="Maximum context length to return")
+    query_parser.add_argument("--use-ai", "-a", action="store_true", help="Use AI to enhance query results")
+    
+    # Collection modification commands
+    collection_modify_parser = subparsers.add_parser("collection-modify", help="Modify a collection")
+    collection_modify_parser.add_argument("collection", help="Collection file path")
+    collection_modify_parser.add_argument("--action", "-a", choices=["add", "remove"], required=True, help="Action to perform")
+    collection_modify_parser.add_argument("--documents", "-d", nargs="+", required=True, help="Documents to add or remove")
+    collection_modify_parser.add_argument("--no-update-relationships", action="store_true", help="Skip updating relationships")
+    collection_modify_parser.add_argument("--no-update-parent", action="store_true", help="Skip updating parent document")
+    
     return parser
 
 
@@ -176,6 +288,14 @@ def main(args: Optional[List[str]] = None) -> int:
             _handle_release(parsed_args)
         elif parsed_args.command == "content":
             _handle_content(parsed_args)
+        elif parsed_args.command == "edit":
+            _handle_edit(parsed_args)
+        elif parsed_args.command == "add-context":
+            _handle_add_context(parsed_args)
+        elif parsed_args.command == "query":
+            _handle_query(parsed_args)
+        elif parsed_args.command == "collection-modify":
+            _handle_collection_modify(parsed_args)
         else:
             print(f"Unknown command: {parsed_args.command}")
             return 1
@@ -372,6 +492,139 @@ def _handle_collection(args):
                     
         except Exception as e:
             print(f"Error reading collection {collection_path}: {e}")
+    
+    elif args.subcmd == "organize-by-theme" and AI_SUPPORT:
+        # Import required modules locally
+        import asyncio
+        from pathlib import Path
+        
+        # Find all documents in the input directory
+        input_dir = Path(args.input_dir)
+        if not input_dir.is_dir():
+            print(f"Error: {input_dir} is not a directory")
+            return
+            
+        # Find document files
+        input_files = []
+        if args.recursive:
+            for ext in [".mdp", ".md", ".txt"]:
+                input_files.extend(list(input_dir.glob(f"**/*{ext}")))
+        else:
+            for ext in [".mdp", ".md", ".txt"]:
+                input_files.extend(list(input_dir.glob(f"*{ext}")))
+                
+        if not input_files:
+            print(f"Error: No document files found in {input_dir}")
+            return
+            
+        # Configure the AI model
+        model_config = AIModelConfig(
+            model=args.model,
+            temperature=0.3
+        )
+        
+        # Create output directory
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create the collection agent
+        agent = CollectionCreationAgent(model_config=model_config)
+        
+        # Run asynchronously
+        async def organize_docs():
+            # Organize documents
+            collections = await agent.organize_documents_by_theme(
+                documents=input_files,
+                base_path=output_dir,
+                max_collections=args.max_collections,
+                min_documents_per_collection=args.min_documents,
+                create_parent_documents=not args.no_parent_documents,
+                save_documents=True
+            )
+            return collections
+            
+        # Run the async function
+        try:
+            collections = asyncio.run(organize_docs())
+            
+            print(f"Created {len(collections)} thematic collections")
+            print(f"Collections saved to: {output_dir}")
+            
+            for i, collection in enumerate(collections):
+                print(f"Collection {i+1}: '{collection.name}' with {len(collection.documents)} documents")
+                if not args.no_parent_documents:
+                    print(f"  Parent document: {collection.documents[0].path}")
+                    
+        except Exception as e:
+            print(f"Error organizing documents: {e}")
+            return
+            
+    elif args.subcmd == "analyze" and AI_SUPPORT:
+        # Import required modules locally
+        import asyncio
+        from pathlib import Path
+        
+        # Resolve the collections directory
+        collections_dir = Path(args.collections_dir)
+        if not collections_dir.is_dir():
+            print(f"Error: {collections_dir} is not a directory")
+            return
+            
+        # Find all parent documents (first document in each collection)
+        parent_docs = list(collections_dir.glob("*/*_parent.mdp"))
+        if not parent_docs:
+            print(f"Error: No collection parent documents found in {collections_dir}")
+            return
+            
+        # Configure the AI model
+        model_config = AIModelConfig(
+            model=args.model,
+            temperature=0.1
+        )
+        
+        # Create the collection agent
+        agent = CollectionCreationAgent(model_config=model_config)
+        
+        # Run asynchronously
+        async def analyze_collections():
+            # Analyze relationships between collections
+            relationships = await agent.analyze_collection_relationships(parent_docs)
+            return relationships
+            
+        # Run the async function
+        try:
+            relationships = asyncio.run(analyze_collections())
+            
+            # Generate relationship report
+            report = "# Collection Relationships Analysis\n\n"
+            report += f"Analysis of {len(parent_docs)} collections\n\n"
+            
+            for relationship in relationships:
+                report += f"## {relationship.type}\n\n"
+                report += f"**{relationship.source}** → **{relationship.target}**\n\n"
+                report += f"{relationship.description}\n\n"
+                if relationship.confidence:
+                    report += f"Confidence: {relationship.confidence:.2f}\n\n"
+            
+            # Save or print report
+            if args.output:
+                output_path = Path(args.output)
+                output_path.write_text(report)
+                print(f"Analyzed {len(parent_docs)} collections")
+                print(f"Found {len(relationships)} relationships")
+                print(f"Saved relationship analysis to {args.output}")
+            else:
+                print("\nCollection Relationships Analysis")
+                print("================================\n")
+                print(f"Analyzed {len(parent_docs)} collections")
+                print(f"Found {len(relationships)} relationships\n")
+                print(report)
+                
+        except Exception as e:
+            print(f"Error analyzing collections: {e}")
+            return
+    else:
+        print(f"Error: Unknown collection subcommand: {args.subcmd}")
 
 
 def _handle_dev(args):
@@ -478,6 +731,429 @@ def _handle_content(args):
         )
         
         print(f"Merged {len(docs)} documents into: {output_file}")
+
+
+def _handle_edit(args):
+    """Handle the edit command."""
+    file_path = Path(args.file)
+    
+    try:
+        # Load the document
+        doc = Document.from_file(file_path)
+        
+        # Determine output path
+        output_path = Path(args.output) if args.output else file_path
+        
+        # Get current content
+        current_content = doc.content
+        
+        # Store the action description for potential metadata update
+        action_description = ""
+        
+        # Update content based on arguments
+        if args.section:
+            # Find the specified section
+            section_start = current_content.find(args.section)
+            if section_start == -1:
+                print(f"Error: Section '{args.section}' not found in document")
+                return
+                
+            # Look for the next header at the same level or higher
+            header_level = args.section.count('#')
+            pattern = r'\n#{1,' + str(header_level) + r'}\s+[^\n]+'
+            
+            next_matches = list(re.finditer(pattern, current_content[section_start:]))
+            if next_matches:
+                section_end = section_start + next_matches[0].start()
+                # Replace just this section (including its header)
+                new_content = (
+                    current_content[:section_start] + 
+                    args.section + '\n\n' + args.content + '\n\n' +
+                    current_content[section_end:]
+                )
+                action_description = f"Updated section '{args.section}'"
+                print(f"Replaced section '{args.section}'")
+            else:
+                # This is the last section, replace to the end
+                new_content = (
+                    current_content[:section_start] + 
+                    args.section + '\n\n' + args.content
+                )
+                action_description = f"Updated section '{args.section}' to end of document"
+                print(f"Replaced section '{args.section}' to end of document")
+        elif args.replace_entire:
+            # Replace the entire content
+            new_content = args.content
+            action_description = "Replaced entire document content"
+            print("Replaced entire document content")
+        elif args.append:
+            # Append to the existing content
+            new_content = current_content + "\n\n" + args.content
+            action_description = "Appended content to document"
+            print("Appended content to document")
+        else:
+            # Default to replacing entire content
+            new_content = args.content
+            action_description = "Replaced document content"
+            print("Replaced document content")
+        
+        # Update the document with the new content
+        doc.content = new_content
+        
+        # Update metadata context field if requested
+        if args.track_changes:
+            # Get the current context field or initialize it
+            context_field = doc.metadata.get("context", "")
+            
+            # Get current date in ISO format
+            from datetime import datetime
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # Format the change entry
+            change_summary = args.change_summary if args.change_summary else action_description
+            change_entry = f"\n\n[{current_date}] {change_summary}"
+            
+            # Append to the context field
+            if context_field:
+                doc.metadata["context"] = context_field + change_entry
+            else:
+                doc.metadata["context"] = f"Document history:\n{change_entry.lstrip()}"
+            
+            print(f"Updated metadata context field with change information")
+        
+        # Save the document
+        doc.save(output_path)
+        
+        print(f"Saved document to {output_path}")
+        print(f"Original length: {len(current_content)} characters")
+        print(f"New length: {len(new_content)} characters")
+        print(f"Difference: {len(new_content) - len(current_content)} characters")
+        
+    except Exception as e:
+        print(f"Error editing document {file_path}: {e}")
+
+
+def _handle_add_context(args):
+    """Handle the add-context command."""
+    file_path = Path(args.file)
+    
+    try:
+        # Load the document
+        doc = Document.from_file(file_path)
+        
+        # Determine output path
+        output_path = Path(args.output) if args.output else file_path
+        
+        # Get current content
+        current_content = doc.content
+        
+        # Format the context if needed
+        if args.as_comment:
+            formatted_context = f"<!-- {args.context} -->\n\n"
+        else:
+            formatted_context = f"{args.context}\n\n"
+        
+        # Store the action description for potential metadata update
+        action_description = ""
+        
+        # Determine where to add the context
+        if args.section:
+            # Find the specified section
+            section_pos = current_content.find(args.section)
+            if section_pos == -1:
+                print(f"Error: Section '{args.section}' not found in document")
+                return
+                
+            # Find the end of the section header line
+            line_end = current_content.find('\n', section_pos)
+            if line_end >= 0:
+                # Insert after the section header
+                new_content = (
+                    current_content[:line_end + 1] + 
+                    "\n" + formatted_context +
+                    current_content[line_end + 1:]
+                )
+                action_description = f"Added context to section '{args.section}'"
+                print(f"Added context to section '{args.section}'")
+            else:
+                # If no line end found, append to the end
+                new_content = current_content + "\n\n" + formatted_context
+                action_description = "Added context to the end of the document"
+                print("Added context to the end of the document")
+        elif args.position == "start":
+            # Add at the start
+            new_content = formatted_context + current_content
+            action_description = "Added context to the start of the document"
+            print("Added context to the start of the document")
+        else:
+            # Add at the end
+            new_content = current_content + "\n\n" + formatted_context
+            action_description = "Added context to the end of the document"
+            print("Added context to the end of the document")
+        
+        # Update the document with the new content
+        doc.content = new_content
+        
+        # Update metadata context field if requested
+        if args.track_changes:
+            # Get the current context field or initialize it
+            context_field = doc.metadata.get("context", "")
+            
+            # Get current date in ISO format
+            from datetime import datetime
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # Format the change entry
+            change_summary = args.change_summary if args.change_summary else action_description
+            change_entry = f"\n\n[{current_date}] {change_summary}"
+            
+            # Prepare a snippet of the added content (truncated if too long)
+            content_snippet = args.context
+            if len(content_snippet) > 50:
+                content_snippet = content_snippet[:47] + "..."
+            
+            # Append to the context field with content snippet
+            if context_field:
+                doc.metadata["context"] = context_field + change_entry + f" - {content_snippet}"
+            else:
+                doc.metadata["context"] = f"Document history:\n{change_entry.lstrip()} - {content_snippet}"
+            
+            print(f"Updated metadata context field with change information")
+        
+        # Save the document
+        doc.save(output_path)
+        
+        print(f"Saved document to {output_path}")
+        print(f"Added {len(formatted_context)} characters of context")
+        print(f"New document length: {len(new_content)} characters")
+        
+    except Exception as e:
+        print(f"Error adding context to document {file_path}: {e}")
+
+
+def _handle_query(args):
+    """Handle the query command."""
+    file_path = Path(args.file)
+    
+    try:
+        # Load the document
+        doc = Document.from_file(file_path)
+        
+        # Get document content
+        content = doc.content
+        
+        # If section specified, extract only that section
+        if args.section:
+            section_start = content.find(args.section)
+            if section_start == -1:
+                print(f"Error: Section '{args.section}' not found in document")
+                return
+                
+            # Find the next section header
+            header_level = args.section.count('#')
+            pattern = r'\n#{1,' + str(header_level) + r'}\s+[^\n]+'
+            
+            next_matches = list(re.finditer(pattern, content[section_start:]))
+            if next_matches:
+                section_end = section_start + next_matches[0].start()
+                search_content = content[section_start:section_end]
+            else:
+                # This is the last section
+                search_content = content[section_start:]
+        else:
+            search_content = content
+        
+        # If AI is requested, use the AI query function
+        if args.use_ai and AI_SUPPORT:
+            # Import AI functionality
+            from datapack.cli.ai import query_document_content
+            import asyncio
+            
+            # Run the AI query
+            result = asyncio.run(query_document_content(
+                input_path=str(file_path),
+                query=args.query,
+                section=args.section,
+                max_context_length=args.max_context
+            ))
+            
+            # Display results
+            print(f"\nQuery: {result['query']}")
+            print(f"Document: {result['document_title']}")
+            if args.section:
+                print(f"Section: {args.section}")
+            print(f"Relevance score: {result['relevance_score']:.2f}")
+            print("\nRelevant context:")
+            print("-" * 40)
+            print(result['context'])
+            print("-" * 40)
+            
+        else:
+            # Simple search implementation
+            query_terms = args.query.lower().split()
+            content_lower = search_content.lower()
+            
+            # Check for direct matches of the query
+            direct_match = args.query.lower() in content_lower
+            if direct_match:
+                # Find the match position and extract surrounding context
+                match_pos = content_lower.find(args.query.lower())
+                
+                # Get surrounding context
+                start_pos = max(0, match_pos - args.max_context // 2)
+                end_pos = min(len(search_content), match_pos + len(args.query) + args.max_context // 2)
+                
+                # Try to extend to paragraph boundaries
+                while start_pos > 0 and search_content[start_pos] != '\n':
+                    start_pos -= 1
+                    
+                while end_pos < len(search_content) and search_content[end_pos] != '\n':
+                    end_pos += 1
+                    
+                # Extract the context
+                context = search_content[start_pos:end_pos].strip()
+                
+                print(f"\nQuery: {args.query}")
+                print(f"Document: {doc.title}")
+                if args.section:
+                    print(f"Section: {args.section}")
+                print("\nRelevant context:")
+                print("-" * 40)
+                print(context)
+                print("-" * 40)
+            else:
+                # Count term matches as a fallback
+                term_matches = sum(1 for term in query_terms if term in content_lower)
+                if term_matches > 0:
+                    # Extract a relevant section based on term density
+                    paragraphs = search_content.split('\n\n')
+                    scored_paragraphs = []
+                    
+                    for para in paragraphs:
+                        para_lower = para.lower()
+                        score = sum(1 for term in query_terms if term in para_lower) / len(para)
+                        scored_paragraphs.append((score, para))
+                        
+                    # Get best paragraph
+                    scored_paragraphs.sort(reverse=True)
+                    if scored_paragraphs:
+                        context = scored_paragraphs[0][1]
+                        if len(context) > args.max_context:
+                            context = context[:args.max_context] + "..."
+                            
+                        print(f"\nQuery: {args.query}")
+                        print(f"Document: {doc.title}")
+                        if args.section:
+                            print(f"Section: {args.section}")
+                        print("\nRelevant context:")
+                        print("-" * 40)
+                        print(context)
+                        print("-" * 40)
+                    else:
+                        print(f"No relevant content found for query: {args.query}")
+                else:
+                    print(f"No relevant content found for query: {args.query}")
+        
+    except Exception as e:
+        print(f"Error querying document {file_path}: {e}")
+
+
+def _handle_collection_modify(args):
+    """Handle the collection-modify command."""
+    collection_path = Path(args.collection)
+    
+    try:
+        # Check if AI support is available
+        if AI_SUPPORT:
+            # Import AI functionality
+            from datapack.cli.ai import modify_collection_documents
+            import asyncio
+            
+            # Run the collection modification
+            result = asyncio.run(modify_collection_documents(
+                collection_path=str(collection_path),
+                action=args.action,
+                document_paths=args.documents,
+                update_relationships=not args.no_update_relationships,
+                update_parent_document=not args.no_update_parent
+            ))
+            
+            # Display results
+            print(f"Modified collection {collection_path}")
+            print(f"Action: {result['action']}")
+            print(f"Initial document count: {result['initial_document_count']}")
+            print(f"Final document count: {result['final_document_count']}")
+            print(f"Documents processed: {result['processed_count']}")
+            
+            if result.get('failed_paths'):
+                print("\nFailed paths:")
+                for fail in result['failed_paths']:
+                    print(f"  - {fail['path']}: {fail['reason']}")
+            
+            if result.get('parent_document_updated'):
+                print(f"\nUpdated parent document: {result['parent_document_updated']}")
+                
+        else:
+            # Load the collection
+            collection = Collection.from_file(collection_path)
+            
+            # Process based on action
+            if args.action == "add":
+                # Add documents to collection
+                added_count = 0
+                failed_paths = []
+                
+                for doc_path in args.documents:
+                    try:
+                        doc = Document.from_file(doc_path)
+                        collection.add_document(doc)
+                        added_count += 1
+                    except Exception as e:
+                        failed_paths.append((doc_path, str(e)))
+                
+                # Save the collection
+                collection.save()
+                
+                print(f"Added {added_count} documents to collection {collection_path}")
+                print(f"Collection now contains {len(collection.documents)} documents")
+                
+                if failed_paths:
+                    print("\nFailed paths:")
+                    for path, reason in failed_paths:
+                        print(f"  - {path}: {reason}")
+                    
+            elif args.action == "remove":
+                # Remove documents from collection
+                removed_count = 0
+                failed_paths = []
+                
+                for doc_path in args.documents:
+                    # Find document by path
+                    doc_to_remove = None
+                    for doc in collection.documents:
+                        if doc.path and str(doc.path) == doc_path:
+                            doc_to_remove = doc
+                            break
+                    
+                    if doc_to_remove:
+                        collection.remove_document(doc_to_remove.id)
+                        removed_count += 1
+                    else:
+                        failed_paths.append((doc_path, "Document not found in collection"))
+                
+                # Save the collection
+                collection.save()
+                
+                print(f"Removed {removed_count} documents from collection {collection_path}")
+                print(f"Collection now contains {len(collection.documents)} documents")
+                
+                if failed_paths:
+                    print("\nFailed paths:")
+                    for path, reason in failed_paths:
+                        print(f"  - {path}: {reason}")
+            
+    except Exception as e:
+        print(f"Error modifying collection {collection_path}: {e}")
 
 
 if __name__ == "__main__":

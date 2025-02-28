@@ -1,28 +1,19 @@
 [project]
 name = "datapack"
 version = "0.0.1"
-description = "enhanced document management for llm retrieval"
-authors = ["Jay Scambler <contact@datapack.ai>"]
+description = "enhanced document management for llm contextualization"
+authors = ["Datapack <contact@datapack.ai>"]
 license = "AGPL-3.0"
 readme = "README.md"
 packages = [{include = "datapack"}]
 repository = "https://github.com/greyhaven-ai/datapack"
 
 dependencies = [
-    "fastapi==0.115.7",
-    "uvicorn==0.34.0",
-    "httpx==0.28.1",
     "pydantic==2.10.6",
     "pydantic-settings==2.7.1",
-    "starlette==0.45.3",
-    "passlib[bcrypt]==1.7.4",
-    "logfire>=3.3.0",
-    "logfire[fastapi]",
-    "opentelemetry-instrumentation-fastapi==0.50b0",
-    "opentelemetry-instrumentation-httpx>=0.50b0",
-    "opentelemetry-instrumentation-requests==0.50b0",
     "pydantic-ai==0.0.21",
     "ruff>=0.9.5",
+    "mdp>=0.1.0",  # Markdown Data Package - core dependency
 ]
 requires-python = ">=3.12,<3.13"
 
@@ -34,6 +25,58 @@ dev = [
     "mypy==1.14.1",
     "ruff>=0.9.5",
 ]
+
+# Format converters
+converters = [
+    "lxml>=4.9.0",  # For XML processing
+    "pandas>=1.5.0",  # For CSV statistics
+    "jsonschema>=4.17.0",  # For JSON validation
+    "pyyaml>=6.0",  # For YAML processing
+    "markdown>=3.4.0",  # For Markdown processing
+    "python-frontmatter>=1.0.0",  # For frontmatter extraction
+    "beautifulsoup4>=4.12.0",  # For HTML processing
+    "sqlparse>=0.4.4",  # For SQL processing
+    "mail-parser>=3.15.0",  # For email processing
+]
+
+# Document converters
+documents = [
+    "python-docx>=0.8.11",  # For DOCX processing
+    "nbformat>=5.9.0",  # For Jupyter Notebook processing
+    "nbconvert>=7.3.0",  # For Jupyter Notebook conversion
+]
+
+# Full installation with all features
+full = [
+    # Converters
+    "lxml>=4.9.0",
+    "pandas>=1.5.0",
+    "jsonschema>=4.17.0",
+    "pyyaml>=6.0",
+    "markdown>=3.4.0",
+    "python-frontmatter>=1.0.0",
+    "beautifulsoup4>=4.12.0",
+    "sqlparse>=0.4.4",
+    "mail-parser>=3.15.0",
+    # Document converters
+    "python-docx>=0.8.11",
+    "nbformat>=5.9.0",
+    "nbconvert>=7.3.0",
+    # PDF support
+    "pypdf>=3.15.0",
+    "pdfminer.six>=20220524",
+    "pdf2image>=1.16.0",
+]
+
+# PDF support
+pdf = [
+    "pypdf>=3.15.0",
+    "pdfminer.six>=20220524",
+    "pdf2image>=1.16.0",
+]
+
+[project.scripts]
+datapack = "datapack.cli:main"
 
 [tool.mypy]
 python_version = "3.12"

@@ -13,7 +13,7 @@ from mcp import ClientSession
 from mcp.client.stdio import stdio_client
 from mcp.client.models import StdioServerParameters
 
-from datapack.mdp.document import Document
+from mdp.document import Document
 
 
 class DatapackMCPClient:

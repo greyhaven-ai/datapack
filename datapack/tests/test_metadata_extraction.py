@@ -3,8 +3,8 @@ Tests for metadata extraction functionality.
 """
 
 import unittest
-from datapack.mdp.utils import extract_metadata_from_content
-from datapack.mdp.document import Document
+from mdp.utils import extract_metadata_from_content
+from mdp.document import Document
 
 
 class TestMetadataExtraction(unittest.TestCase):

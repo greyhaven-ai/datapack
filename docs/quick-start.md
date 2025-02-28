@@ -19,7 +19,7 @@ Let's walk through a simple example to demonstrate Datapack's core functionality
 First, let's create a simple document using Datapack's MDP module:
 
 ```python
-from datapack.mdp import Document
+from mdp import Document
 
 # Create a new document with content and metadata
 doc = Document.create(
@@ -42,7 +42,7 @@ This code creates a new document with markdown content and some basic metadata, 
 Now, let's read the document and access its contents and metadata:
 
 ```python
-from datapack.mdp import Document
+from mdp import Document
 
 # Load the document from file
 doc = Document.from_file("sample_document.mdp")
@@ -63,7 +63,7 @@ print(f"Tags: {', '.join(doc.tags)}")
 Let's update the document with new content and metadata:
 
 ```python
-from datapack.mdp import Document
+from mdp import Document
 
 # Load the document
 doc = Document.from_file("sample_document.mdp")
@@ -86,7 +86,7 @@ print("Document updated and saved to updated_document.mdp")
 Datapack's MDP module allows you to work with collections of documents:
 
 ```python
-from datapack.mdp import Document, Collection
+from mdp import Document, Collection
 import os
 
 # Create a collection
@@ -119,7 +119,7 @@ print(f"Found {len(filtered_docs)} documents with tag 'doc-2'")
 Datapack allows you to establish relationships between documents:
 
 ```python
-from datapack.mdp import Document
+from mdp import Document
 
 # Create two documents
 parent_doc = Document.create(
@@ -160,7 +160,7 @@ for doc in related_docs:
 Datapack provides utility functions for converting various file formats to MDP:
 
 ```python
-from datapack.mdp import convert_file, convert_directory
+from mdp import convert_file, convert_directory
 
 # Convert a single file
 doc = convert_file(

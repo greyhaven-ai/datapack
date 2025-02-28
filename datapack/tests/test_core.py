@@ -11,8 +11,8 @@ import unittest
 from datetime import date, datetime
 from pathlib import Path
 
-from datapack.mdp.core import MDPFile, read_mdp, write_mdp
-from datapack.mdp.metadata import (
+from mdp.core import MDPFile, read_mdp, write_mdp
+from mdp.metadata import (
     extract_metadata, 
     validate_metadata, 
     create_metadata,
@@ -23,7 +23,7 @@ from datapack.mdp.metadata import (
     is_custom_field,
     DEFAULT_METADATA
 )
-from datapack.mdp.utils import convert_to_mdp, find_mdp_files, batch_convert_to_mdp
+from mdp.utils import convert_to_mdp, find_mdp_files, batch_convert_to_mdp
 
 
 class TestMDPCore(unittest.TestCase):

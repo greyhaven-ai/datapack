@@ -49,7 +49,7 @@ The server provides the following capabilities:
 
 ```python
 import asyncio
-from datapack.mdp.document import Document
+from mdp.document import Document
 from datapack.mcp.client_mcp import DatapackMCPClient
 
 async def main():
@@ -91,7 +91,7 @@ asyncio.run(main())
 #### Synchronous Client
 
 ```python
-from datapack.mdp.document import Document
+from mdp.document import Document
 from datapack.mcp.client_mcp import DatapackMCPClientSync
 
 # Create a sync client

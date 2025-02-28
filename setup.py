@@ -39,6 +39,18 @@ extras_require = {
         'rich>=13.0.0',
         'python-dotenv>=1.0.0',
     ],
+    # PDF support
+    'pdf': [
+        'pypdf>=3.15.0',
+        'pdfminer.six>=20220524',
+        'pdf2image>=1.16.0',
+    ],
+    # Enhanced converter support
+    'converters': [
+        'lxml>=4.9.0',  # For advanced XML processing
+        'pandas>=1.5.0',  # For advanced CSV statistics
+        'jsonschema>=4.17.0',  # For JSON validation
+    ],
     # Development tools
     'dev': [
         'pytest>=7.0.0',
@@ -49,11 +61,19 @@ extras_require = {
     ],
 }
 
+# Add a 'full' extra that includes everything
+extras_require['full'] = (
+    extras_require['ai-openai'] +
+    extras_require['pdf'] +
+    extras_require['converters'] +
+    ['mdp>=0.1.0']
+)
+
 setup(
     name="datapack",
     version=version,
     author="Datapack Team",
-    author_email="info@datapack.org",
+    author_email="contact@datapack.ai",
     description="A platform for document ingestion, parsing, annotation, and secure sharing across software ecosystems",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -61,6 +81,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "mdp>=0.1.0",  # Markdown Data Package - now as an external dependency
         "pyyaml>=6.0",
         "markdown>=3.4.0",
         "python-frontmatter>=1.0.0",
@@ -76,7 +97,7 @@ setup(
     extras_require=extras_require,
     entry_points={
         'console_scripts': [
-            'mdp=datapack.cli:main',
+            'datapack=datapack.cli:main',
         ],
     },
     classifiers=[

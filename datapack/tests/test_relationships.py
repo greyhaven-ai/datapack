@@ -11,9 +11,9 @@ import unittest
 import uuid
 from pathlib import Path
 
-from datapack.mdp import Document, Collection
-from datapack.mdp.core import MDPFile, read_mdp, write_mdp
-from datapack.mdp.metadata import (
+from mdp import Document, Collection
+from mdp.core import MDPFile, read_mdp, write_mdp
+from mdp.metadata import (
     create_metadata,
     generate_uuid,
     is_valid_uuid,
@@ -23,7 +23,7 @@ from datapack.mdp.metadata import (
     add_relationship_to_metadata,
     create_collection_metadata
 )
-from datapack.mdp.utils import (
+from mdp.utils import (
     find_related_documents,
     find_collection_members,
     get_collection_hierarchy

@@ -1,75 +1,84 @@
 # Datapack Workflows
 
-This directory contains workflow utilities for managing and processing documents in various contexts.
+This directory contains high-level workflows for common operations in Datapack.
 
-## Overview
+## Contents
 
-The workflows package provides higher-level functionality that builds on top of the core MDP file format and utilities. These workflows are organized by domain rather than being tightly coupled to the MDP format itself.
+- **Content Workflows**: Document creation and processing operations
+- **Release Workflows**: Version and release management
+- **Development Workflows**: Utilities for package development
+- **AI Processing Workflows**: AI-powered document processing workflows
 
-## Directory Structure
+## AI Processing Workflows
 
-- `__init__.py` - Package exports and documentation
-- `dev.py` - Development-focused workflows for code documentation and API generation
-- `releases.py` - Release management workflows for version documentation
-- `content.py` - Content manipulation workflows for batch processing and merging documents
+The AI processing workflows combine PydanticAI-powered agents to provide comprehensive document processing capabilities:
 
-## Usage
+### Features
 
-### Development Workflows
+- **Dependency Injection System**: Provides context-specific data for AI agents
+- **Document Processing**: Extract metadata, key insights, and more from documents
+- **Collection Processing**: Process collections of related documents
+- **Relationship Extraction**: Identify and manage relationships between documents
+- **Content Enhancement**: Improve document content with AI-powered editing
+- **File Conversion**: Convert various file formats to MDP format
+- **Agent-Based Workflows**: Combine specialized agents for complex tasks
+
+### Basic Usage
 
 ```python
-from datapack.workflows.dev import generate_api_docs
+from datapack.workflows import process_document, process_documents, ai_convert_directory
 
-# Generate API documentation for a Python module
-api_doc = generate_api_docs(
-    code_directory="./my_package",
-    output_file="./docs/api_reference.mdp",
-    module_name="my_package"
+# Process a single document
+processed_doc = process_document(
+    document="example.md",
+    extract_metadata=True,
+    extract_insights=True,
+    enhance_content=True
+)
+
+# Process a collection of documents
+from mdp import Collection
+collection = Collection(name="My Collection", documents=[...])
+processed_collection = process_documents(
+    collection=collection,
+    extract_relationships=True,
+    max_concurrent=3
+)
+
+# Convert and process files in a directory
+documents, collection = ai_convert_directory(
+    source_directory="source",
+    output_directory="output",
+    file_pattern="*.{md,txt,pdf}",
+    recursive=True
 )
 ```
 
-### Release Workflows
+### Advanced Usage
 
-```python
-from datapack.workflows.releases import create_release_notes
+For more advanced usage including custom processing pipelines, see `examples.py` which demonstrates:
 
-# Generate release notes from git commits
-notes = create_release_notes(
-    version="1.0.0",
-    output_file="./docs/releases/v1.0.0.mdp",
-    source_directory=".",
-    git_log_range="v0.9.0..HEAD"
-)
-```
+- Custom document processing pipelines
+- Using multiple agents with different configurations
+- Working with asynchronous workflows
+- Integration with PydanticAI agents and RunContext
 
-### Content Workflows
+## Content Workflows
 
-```python
-from datapack.workflows.content import merge_documents
-from datapack.mdp import Document
+The content workflows provide utilities for creating and managing document content:
 
-# Merge multiple documents into one
-doc1 = Document.from_file("./docs/part1.mdp")
-doc2 = Document.from_file("./docs/part2.mdp")
+- **Document Creation**: Templates for creating new documents
+- **Package Creation**: Utilities for creating new packages
+- **Document Conversion**: Tools for converting between formats
 
-merged = merge_documents(
-    docs=[doc1, doc2],
-    output_path="./docs/complete.mdp",
-    title="Complete Documentation"
-)
-```
+## Release Workflows
 
-## Command Line Use
+The release workflows handle version management and release processes:
 
-The workflows in this package are also accessible through the `mdp` command-line interface:
+- **Version Management**: Utilities for managing version numbers
+- **Changelog Generation**: Tools for generating changelogs
+- **Release Validation**: Tools for validating releases
 
-```bash
-# Generate API documentation
-mdp dev api-docs ./my_package ./docs/api_reference.mdp --module-name my_package
+## Usage Examples
 
-# Create release notes
-mdp release notes 1.0.0 ./docs/releases/v1.0.0.mdp --source-dir . --git-range v0.9.0..HEAD
-
-# Merge documents
-mdp content merge ./docs/part1.mdp ./docs/part2.mdp --output ./docs/complete.mdp --title "Complete Documentation"
-``` 
+See `examples.py` for detailed usage examples of all workflows. 

@@ -11,8 +11,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from datapack.mdp import Document, Collection
-from datapack.mdp.core import read_mdp
+from mdp import Document, Collection
+from mdp.core import read_mdp
 
 
 class TestDocument(unittest.TestCase):

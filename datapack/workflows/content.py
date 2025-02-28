@@ -12,13 +12,19 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Union, Tuple
 import shutil
 
-from datapack.mdp.document import Document
-from datapack.mdp.collection import Collection
-from datapack.mdp.utils import find_mdp_files, extract_metadata_from_content
+from mdp.document import Document
+from mdp.collection import Collection
+from mdp.utils import find_mdp_files, extract_metadata_from_content
 
 # Attempt to import AI capabilities, but don't fail if not available
 try:
-    from datapack.ai.agents import DocumentProcessingAgent, ContentEnhancementAgent
+    from datapack.ai.agents import (
+        DocumentProcessingAgent, 
+        ContentEnhancementAgent,
+        configure_ai,
+        ai_settings
+    )
+    from datapack.ai.models import AISettings
     AI_AVAILABLE = True
 except ImportError:
     AI_AVAILABLE = False
@@ -311,7 +317,7 @@ def merge_documents(
 def ai_process_documents(
     source_directory: Union[str, Path],
     output_directory: Union[str, Path],
-    model: str = "gpt-4o",
+    settings: Optional[Union[AISettings, Dict[str, Any]]] = None,
     api_key: Optional[str] = None,
     include_pattern: str = "*.*",
     recursive: bool = True,
@@ -329,24 +335,25 @@ def ai_process_documents(
     Args:
         source_directory: Directory containing source documents
         output_directory: Directory to save processed MDP documents
-        model: AI model to use for processing
-        api_key: Optional API key for the model
+        settings: Optional AI settings to configure the processing
+        api_key: Optional API key to override the default
         include_pattern: Pattern to match files
         recursive: Whether to search directories recursively
         create_collection: Whether to create a Collection
         analyze_relationships: Whether to analyze relationships between documents
-        enhancements: Optional list of enhancements to apply 
-                      (e.g., ["summary", "annotations", "improvements"])
+        enhancements: Optional list of enhancements to apply
         
     Returns:
         Tuple of (list of processed Document objects, optional Collection)
-        
-    Raises:
-        ImportError: If AI capabilities are not available
-        ValueError: If the source directory is invalid
     """
     if not AI_AVAILABLE:
         raise ImportError("AI capabilities are not available. Install the required dependencies.")
+    
+    # Configure AI settings if provided
+    if settings:
+        configure_ai(settings)
+    if api_key:
+        ai_settings.default_model.api_key = api_key
     
     source_dir = Path(source_directory)
     output_dir = Path(output_directory)
@@ -355,10 +362,7 @@ def ai_process_documents(
     os.makedirs(output_dir, exist_ok=True)
     
     # Initialize the document processing agent
-    doc_agent = DocumentProcessingAgent(
-        model=model,
-        api_key=api_key
-    )
+    doc_agent = DocumentProcessingAgent()
     
     # Process all documents in the directory
     documents, collection = doc_agent.process_directory(
@@ -371,10 +375,7 @@ def ai_process_documents(
     
     # Apply additional enhancements if requested
     if enhancements and len(documents) > 0:
-        enhancement_agent = ContentEnhancementAgent(
-            model=model,
-            api_key=api_key
-        )
+        enhancement_agent = ContentEnhancementAgent()
         
         for doc in documents:
             # Add enhanced metadata to each document
@@ -423,7 +424,7 @@ def ai_process_documents(
 def ai_enhance_document(
     document: Document,
     enhancements: List[str] = ["tags", "summary"],
-    model: str = "gpt-4o",
+    settings: Optional[Union[AISettings, Dict[str, Any]]] = None,
     api_key: Optional[str] = None
 ) -> Document:
     """
@@ -435,33 +436,32 @@ def ai_enhance_document(
     Args:
         document: The document to enhance
         enhancements: List of enhancements to apply
-        model: AI model to use for enhancements
-        api_key: Optional API key for the model
+        settings: Optional AI settings to configure the processing
+        api_key: Optional API key to override the default
         
     Returns:
         The enhanced document
-        
-    Raises:
-        ImportError: If AI capabilities are not available
     """
     if not AI_AVAILABLE:
         raise ImportError("AI capabilities are not available. Install the required dependencies.")
+    
+    # Configure AI settings if provided
+    if settings:
+        configure_ai(settings)
+    if api_key:
+        ai_settings.default_model.api_key = api_key
     
     # Apply metadata enhancements
     if any(e in enhancements for e in ["title", "tags", "summary"]):
         document.auto_enhance_metadata(
             update_title="title" in enhancements,
             update_tags="tags" in enhancements,
-            update_summary="summary" in enhancements,
-            model=model
+            update_summary="summary" in enhancements
         )
     
     # Apply additional advanced enhancements
     if any(e in enhancements for e in ["full_summary", "annotations", "improvements"]):
-        enhancement_agent = ContentEnhancementAgent(
-            model=model,
-            api_key=api_key
-        )
+        enhancement_agent = ContentEnhancementAgent()
         
         # Initialize the enhancements dict if needed
         if "x_enhancements" not in document.metadata:

@@ -47,7 +47,7 @@ For a code coverage report, install and run with coverage:
 
 ```bash
 pip install coverage
-coverage run --source=datapack.mdp run_tests.py
+coverage run --source=mdp run_tests.py
 coverage report
 ```
 
